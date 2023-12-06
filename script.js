@@ -1,11 +1,8 @@
-// Student Assignment Project
-//Update
 const CourseInfo = {
   id: 451,
-  name: "Introduction to JavaScript"
+  name: "Introduction to JavaScript",
 };
-
-// Assignment Group
+// The provided assignment group.
 const AssignmentGroup = {
   id: 12345,
   name: "Fundamentals of JavaScript",
@@ -16,146 +13,120 @@ const AssignmentGroup = {
       id: 1,
       name: "Declare a Variable",
       due_at: "2023-01-25",
-      points_possible: 50
+      points_possible: 50,
     },
     {
       id: 2,
       name: "Write a Function",
       due_at: "2023-02-27",
-      points_possible: 150
+      points_possible: 150,
     },
     {
       id: 3,
       name: "Code the World",
       due_at: "3156-11-15",
-      points_possible: 500
-    }
-  ]
+      points_possible: 500,
+    },
+  ],
 };
-
-// Learner Submission Data
+// The provided learner submission data.
 const LearnerSubmissions = [
   {
     learner_id: 125,
     assignment_id: 1,
     submission: {
       submitted_at: "2023-01-25",
-      score: 47
-    }
+      score: 47,
+    },
   },
   {
     learner_id: 125,
     assignment_id: 2,
     submission: {
       submitted_at: "2023-02-12",
-      score: 150
-    }
+      score: 150,
+    },
   },
   {
     learner_id: 125,
     assignment_id: 3,
     submission: {
       submitted_at: "2023-01-25",
-      score: 400
-    }
+      score: 400,
+    },
   },
   {
     learner_id: 132,
     assignment_id: 1,
     submission: {
       submitted_at: "2023-01-24",
-      score: 39
-    }
+      score: 39,
+    },
   },
   {
     learner_id: 132,
     assignment_id: 2,
     submission: {
       submitted_at: "2023-03-07",
-      score: 140
-    }
-  }
+      score: 140,
+    },
+  },
 ];
 
-function validateInput(course, ag,submissions)
-{
-  if (ag.course_id!==course.id)
-  {
-    throw new Error("Assignment Group does not belong to the specified course");
-  }
 
-  for (const submission of submissions)
-{
-  const assignment = ag.assignments.find(a =>a.id===submission.assignment_id);
-  if (!assignment)
-  {
-    throw new Error("Invalid assignment ID ${submission.assignment_id} in submissions.");
-  }
-  if (assignment.points_possible<=0)
-  {
-    throw new Error("Invalid points_possible for assignment ${assignment.id}. should be greater than 0");
-  }
-  if (typeof submission.submission.score!=='number')
-  {
-    throw new Error("Invalid score type for learner ${submission.learner_id} in assignment ${assignment.id}");
-  }
-  if (new Date(submission.submission.submitted_at) > new Date(assignment.due_at))
-  {
-    submission.submission.score -=0.1*assignment.points_possible;
-  }
-}
-}
-
-function calculateAverages(learnerData)
-{
-  return Object.values(learnerData).map(learner=>{
-    const assignments={};
-    for (const assignmentID in learner)
+/*function getLearnerData(course, ag, submissions) {
+  // here, we would process this data to achieve the desired result.
+  const result = [
     {
-      if(assignmentID !== 'id' && assignmentID!=='totalScore' && assignmentID!== 'totalPointsPossible')
-      {
-        assignments[assignmentID]=learner[assignmentID];
-      }
-    }
-
-    return{
-      id: learner.id,
-      avg: learner.totalPointsPossible > 0 ? learner.totalScore/learner.totalPointsPossible : 0,
-      ...assignments};
-  });
-}
-
+      id: 125,
+      avg: 0.985, // (47 + 150) / (50 + 150)
+      1: 0.94, // 47 / 50
+      2: 1.0, // 150 / 150
+    },
+    {
+      id: 132,
+      avg: 0.82, // (39 + 125) / (50 + 150)
+      1: 0.78, // 39 / 50
+      2: 0.833, // late: (140 - 15) / 150
+    },
+  ];
+  return result;
+}*/
 function getLearnerData(course, ag, submissions) {
-  try{
-    validateInput(course, ag, submissions);
-
-    const learnerData={};
-
-    submissions.forEach(submission => {
-      const learnerID = submission.learner_id;
-      const assignmentID = submission.assignment_id;
-      const score= submission.submission.score;
-      const pointsPossible=ag.assignments.find(a=>a.id===assignmentID).points_possible;
-
-      if (!learnerData[learnerID])
-      {
-        learnerData[learnerID] = {
-          id:learnerID,
-          totalScore:0,
-          totalPointsPossible:0
-        };
-      }
-      learnerData[learnerID].totalScore+=score;
-      learnerData[learnerID].totalPointsPossible +=pointsPossible;
-      learnerData[learnerID][assignmentID]=pointsPossible>0 ? score/pointsPossible:0;
-
+  const learnerData = {};
+  submissions.forEach((submission) => {
+    const {
+      learner_id,
+      assignment_id,
+      submission: { score },
+    } = submission;
+    if (!learnerData[learner_id]) {
+      learnerData[learner_id] = {
+        id: learner_id,
+        totalScore: 0,
+        totalPossible: 0,
+        scores: {},
+      };
+    }
+    const assignment = ag.assignments.find(
+      (assignment) => assignment.id === assignment_id,
+    );
+    const pointsPossible = assignment.points_possible;
+    learnerData[learner_id].totalScore += score;
+    learnerData[learner_id].totalPossible += pointsPossible;
+    learnerData[learner_id].scores[assignment_id] = score / pointsPossible;
+  });
+  const result = Object.values(learnerData).map((data) => {
+    const assignments = {
+      id: data.id,
+      avg: data.totalScore / data.totalPossible,
+    };
+    Object.entries(data.scores).forEach(([assignmentId, score]) => {
+      assignments[assignmentId] = score;
     });
-    return calculateAverages(learnerData);
-  } catch(error)
-  {
-    console.error(error.message);
-    return[];
-  }
+    return assignments;
+  });
+  return result;
 }
-   const result = getLearnerData(CourseInfo,AssignmentGroup,LearnerSubmissions);
-  console.log(result);
+const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
+console.log(result);
